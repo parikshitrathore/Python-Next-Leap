@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'orders',
     'notifications',
     'audit_logs',
+    'django_filters',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
