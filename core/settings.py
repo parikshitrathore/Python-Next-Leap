@@ -27,6 +27,7 @@ ALLOWED_HOSTS = config("ALLOWED_HOST", default="*").split(',')
 
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -36,8 +37,17 @@ INSTALLED_APPS = [
     'corsheaders',
     'storages',
     'rest_framework',
+    'rest_framework.authtoken',
+    'debug_toolbar',
     'base',
     'accounts',
+    'users',
+    'inventory',
+    'products',
+    'warehouses',
+    'orders',
+    'notifications',
+    'audit_logs',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -45,6 +55,7 @@ AUTH_USER_MODEL = 'accounts.User'
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -136,34 +147,34 @@ CORS_ALLOW_CREDENTIALS = True
 # ]
 
 # AWS S3 Configuration
-AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+# AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+# AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
-AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = None
-AWS_S3_SIGNATURE_VERSION = 's3v4'
+# AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
+# AWS_S3_FILE_OVERWRITE = False
+# AWS_DEFAULT_ACL = None
+# AWS_S3_SIGNATURE_VERSION = 's3v4'
 # AWS_S3_VERIFY = True
 # AWS_QUERYSTRING_AUTH = False
 
 
 # Storage Configuration
-STORAGES = {
-    "default": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-    },
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-    },
-}
+# STORAGES = {
+#     "default": {
+#         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+#     },
+#     "staticfiles": {
+#         "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+#     },
+# }
 
 
 # Optional: Define custom domain if you have one
 # AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 
 # Static files configuration
-# STATIC_URL = 'static/'
-STATIC_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/static/'
+STATIC_URL = 'static/'
+# STATIC_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
@@ -206,6 +217,8 @@ REST_FRAMEWORK = {
         'high_priority': '5000/day',  # Custom rate for specific views
     }
 }
+
+INTERNAL_IPS = ['127.0.0.1']
 
 LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(exist_ok=True)
