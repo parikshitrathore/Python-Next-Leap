@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'base',
     'accounts',
-    'users',
     'inventory',
     'products',
     'warehouses',

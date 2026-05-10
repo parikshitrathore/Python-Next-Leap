@@ -8,6 +8,7 @@ from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserPr
 class RegisterView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [AnonRateThrottle]
+    # Limits too many anonymous requests.
 
     def post(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
@@ -27,6 +28,7 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    # AllowAny= anyone can access
     throttle_classes = [AnonRateThrottle]
 
     def post(self, request):
@@ -54,6 +56,7 @@ class UserProfileView(APIView):
 
     def patch(self, request):
         serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+        # partial=True > user does not need to send all fields.
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

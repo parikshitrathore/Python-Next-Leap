@@ -21,10 +21,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        # this funciton runs whenever we call serializer.save()
         validated_data.pop('confirm_password')
         password = validated_data.pop('password')
         user = User.objects.create(**validated_data)
+        # creates a new row in user table
         user.set_password(password)
+        # Converts the plain password into a hashed password
         user.save()
         token, created = Token.objects.get_or_create(user=user)
         user.token = token.key
@@ -53,3 +56,4 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'name', 'date_of_birth',
                  'address', 'state', 'city', 'created_at', 'updated_at']
         read_only_fields = ['username', 'email', 'created_at', 'updated_at']
+        # these fields can be shown, but user cannot update them through this serializer

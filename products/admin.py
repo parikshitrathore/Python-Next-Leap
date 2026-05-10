@@ -1,3 +1,12 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Product
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ['name', 'sku', 'price', 'weight', 'is_active', 'created_at']
+    search_fields = ['name', 'sku', 'description']
+    list_filter = ['is_active']
+    ordering = ['-created_at']
+    readonly_fields = ['created_at', 'updated_at']
