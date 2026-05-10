@@ -4,6 +4,7 @@ app_name = 'api'
 
 urlpatterns = [
     path('accounts/', include('accounts.urls')),
-    # Add other API urls here, for example:
-    # path('base/', include('base.urls')),
+    path('products/', include('products.urls')),
+    path('warehouses/', include('warehouses.urls')),
+    path('inventory/', include('inventory.urls')),
 ]

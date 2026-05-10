@@ -37,8 +37,12 @@ INSTALLED_APPS = [
     'corsheaders',
     'storages',
     'rest_framework',
+    'rest_framework.authtoken',
     'base',
     'accounts',
+    'products',
+    'warehouses',
+    'inventory',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -209,7 +213,12 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
         'user': '1000/day'
-    }
+    },
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ]
 }
 
 JAZZMIN_SETTINGS = {
