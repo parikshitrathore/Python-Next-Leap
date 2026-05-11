@@ -21,6 +21,11 @@ class InventorySerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         quantity_available = data.get('quantity_available', getattr(self.instance, 'quantity_available', 0))
+        warehouse = data.get('warehouse',getattr(self.instance, 'warehouse', None))
+        if(quantity_available > warehouse.capacity):
+            raise serializers.ValidationError(
+                {'quantity_available': 'quantity_available cannot exceed warehouse capacity.'}
+            )
         # data.get(new_value, old_value) =Use new request value if given, otherwise use existing DB value.
         # ex. use get only reserved_quantity in request, then quantity_available is missing. So it will fallback  to getattr(...)
         reserved_quantity = data.get('reserved_quantity', getattr(self.instance, 'reserved_quantity', 0))

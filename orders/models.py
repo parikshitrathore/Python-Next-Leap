@@ -18,6 +18,14 @@ class Order(BaseModel):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     total_price = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
 
+    class Meta:
+        indexes = [
+            # Filtering by status alone (e.g. ?status=pending)
+            models.Index(fields=['status'], name='order_status_idx'),
+            # Filtering a user's orders by status (common list query)
+            models.Index(fields=['user', 'status'], name='order_user_status_idx'),
+        ]
+
     def __str__(self):
         return self.order_number
 

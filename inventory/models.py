@@ -24,6 +24,12 @@ class Inventory(models.Model):
         ]
 
     def clean(self):
+        if self.quantity_available > self.warehouse.capacity:
+            raise ValidationError({
+                'quantity_available':
+                    'Quantity available cannot exceed warehouse capacity.'
+            })
+        
         if self.reserved_quantity > self.quantity_available:
             raise ValidationError(
                 {'reserved_quantity': 'Reserved quantity cannot exceed quantity available.'}
