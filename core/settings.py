@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'products',
     'warehouses',
     'inventory',
+    'orders',
+    'notifications',
+    'audit_logs',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -225,23 +228,42 @@ JAZZMIN_SETTINGS = {
     "site_title": "Inventory Admin",
     "site_header": "Inventory Management",
     "site_brand": "Inventory Admin",
+
     "welcome_sign": "Welcome to the Inventory Management System",
     "copyright": "Inventory Management Ltd",
-    "search_model": ["accounts.user"],
+
+    "search_model": ["orders.order" , "products.product"],
     "user_avatar": None,
     "topmenu_links": [
-        {"name": "Home", "url": "admin:index", "permissions": ["accounts.view_user"]},
+        {"name": "Orders", "url": "/admin/orders/order/"},
         {"model": "accounts.user"},
     ],
+    "usermenu_links": [
+        {"name": "Support", "url": "https://github.com/parikshitrathore/Python-Next-Leap", "new_window": True},
+    ],
+    
     "show_sidebar": True,
     "navigation_expanded": True,
-    "hide_apps": [],
+    "hide_apps": ['auth'],
     "hide_models": [],
+
+    "order_with_respect_to": [
+        "accounts",
+        "orders",
+        "notifications",
+        "products",
+        "warehouses",
+        "inventory",
+        "audit_logs",
+    ],
     "icons": {
         "auth": "fas fa-users-cog",
         "accounts.user": "fas fa-user",
         "auth.Group": "fas fa-users",
+        "audit_logs": "fas fa-history",
+        "notifications": "fas fa-bell",
     },
+    
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
     "related_modal_active": False,

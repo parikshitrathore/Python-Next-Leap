@@ -8,7 +8,7 @@ class LargeResultsSetPagination(PageNumberPagination):
 
     def get_paginated_response(self, data):
         return Response({
-            "message": "Products fetched successfully",
+            "message": "success",
             "page": self.page.number,  # current page number
             "page_size": self.get_page_size(self.request),
             "total_pages": self.page.paginator.num_pages,
