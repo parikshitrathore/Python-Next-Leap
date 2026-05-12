@@ -1,5 +1,7 @@
 from rest_framework import viewsets, filters, status
 from rest_framework.response import Response
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from django_filters.rest_framework import DjangoFilterBackend
 
 from products.models import Product
@@ -7,22 +9,20 @@ from .serializers import ProductSerializer
 from base.permissions import IsAuthenticatedOrReadOnly
 
 from base.utils import LargeResultsSetPagination
-# from django.utils.decorators import method_decorator
-# from django.views.decorators.cache import cache_page
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['is_active']
+    filterset_fields = {
+        'is_active': ['exact'],
+        'price': ['exact', 'gte', 'lte'],
+        'weight': ['exact', 'gte', 'lte'],
+    }
     search_fields = ['name', 'sku']
     ordering_fields = ['price', 'created_at']
     pagination_class = LargeResultsSetPagination  # required for pagination
-
-    # @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
-    # def list(self, request, *args, **kwargs):
-    #     return super().list(request, *args, **kwargs)
 
     # CREATE
     def create(self, request, *args, **kwargs):
@@ -40,8 +40,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         )
 
     # LIST
+    @method_decorator(cache_page(60 * 2))  # Cache for 2 minutes
     def list(self, request, *args, **kwargs):
-
+        print("VIEW EXECUTED [ not serving from redis cache ]")
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
 

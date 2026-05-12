@@ -7,8 +7,11 @@ from base.permissions import IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
 from base.utils import LargeResultsSetPagination
 
+from django.db import connection, reset_queries
+
 class InventoryViewSet(viewsets.ModelViewSet):
-    queryset = Inventory.objects.all()
+    # queryset = Inventory.objects.all()
+    queryset = Inventory.objects.select_related('product', 'warehouse').all()
     serializer_class = InventorySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -52,19 +55,19 @@ class InventoryViewSet(viewsets.ModelViewSet):
 
     # LIST
     def list(self, request, *args, **kwargs):
-
+        reset_queries()
         queryset = self.filter_queryset(self.get_queryset())
-
         page = self.paginate_queryset(queryset)
-
+        
         if page is not None:
-
             serializer = self.get_serializer(page, many=True)
+            data = serializer.data
+
+            print(f"🔥 Total Queries AFTER serialization: {len(connection.queries)}")
 
             return self.get_paginated_response({
                 "message": "Inventories fetched successfully",
-                "count": len(serializer.data),
-                "data": serializer.data
+                "data": data
             })
 
         serializer = self.get_serializer(queryset, many=True)

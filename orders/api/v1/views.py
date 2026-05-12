@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError
 
 from products.models import Product
 from inventory.models import Inventory
@@ -11,10 +10,11 @@ from orders.models import Order, OrderItem
 from .serializers import OrderCreateSerializer, OrderDetailSerializer, OrderStatusUpdateSerializer
 from base.utils import LargeResultsSetPagination
 
+from django.db.models import Prefetch
+from django.db import connection, reset_queries
+
 class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all()
     permission_classes = [permissions.IsAuthenticated]
-    # permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status']
     search_fields = ['order_number']
@@ -22,8 +22,18 @@ class OrderViewSet(viewsets.ModelViewSet):
     pagination_class = LargeResultsSetPagination
 
     def get_queryset(self):
+        """
+        Optimized queryset using prefetch_related and select_related 
+        to solve the N+1 problem.
+        """
         if self.request.user.is_authenticated:
-            return Order.objects.filter(user=self.request.user)
+            # optimized query using prefetch_related & select_related to solve N+1
+            return Order.objects.filter(user=self.request.user).prefetch_related(
+                Prefetch(
+                    'items', 
+                    queryset=OrderItem.objects.select_related('product')
+                )
+            )
         return Order.objects.none()
 
     def get_serializer_class(self):
@@ -50,20 +60,16 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                     # Validate product exists & is active
                     product = get_object_or_404(Product, id=product_id, is_active=True)
-                    
-                    #Validate stock exists & enough stock available [along with prevent race condition]
-                    inventory_items = Inventory.objects.select_for_update().filter(
-                        product=product, 
-                        quantity_available__gte=quantity
-                    )
+
+                    #Validate stock exists & enough stock available
+                    inventory_items = Inventory.objects.filter(product=product, quantity_available__gte=quantity)
+
                     if not inventory_items.exists():
-                        raise ValidationError(
-                            f"Insufficient stock for product: {product.name}"
-                        )
+                        raise Exception(f"Insufficient stock for product: {product.name}")
 
                     inventory = inventory_items.first()
-
-                    #Deduct inventory
+                    
+                    # deduct inventory 
                     inventory.quantity_available -= quantity
                     inventory.save()
 
@@ -73,7 +79,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                         quantity=quantity,
                         price_at_purchase=product.price
                     )
-                    # Calculate total price
+                    # calculate price
                     total_price += product.price * quantity
 
                 order.total_price = total_price
@@ -88,19 +94,25 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
+        reset_queries()
+
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
-
+        
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            data = serializer.data
+            print(f"🔥 Total Queries AFTER serialization in list orders: {len(connection.queries)}")
+            return self.get_paginated_response(data)
 
         serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        print(f"🔥 Total Queries AFTER serialization in list orders: {len(connection.queries)}")
 
         return Response({
             "message": "Orders fetched successfully",
             "count": queryset.count(),
-            "data": serializer.data
+            "data": data
         })
 
     def retrieve(self, request, *args, **kwargs):
@@ -110,29 +122,3 @@ class OrderViewSet(viewsets.ModelViewSet):
             "message": "Order fetched successfully",
             "data": serializer.data
         })
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response({
-            "message": "Order updated successfully",
-            "data": OrderDetailSerializer(instance).data
-        })
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        delete_id = instance.id
-        instance.delete()
-
-        return Response({
-            "message": "Order deleted successfully",
-            "data": {
-                "id": delete_id,
-                "order_number": instance.order_number
-            }
-        }, status=status.HTTP_204_NO_CONTENT)

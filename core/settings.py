@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+import mimetypes
+
+mimetypes.add_type("application/javascript", ".js", True)
+mimetypes.add_type("text/css", ".css", True)
 
 from corsheaders.defaults import default_methods, default_headers
 from decouple import config
@@ -39,6 +43,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'base',
+]
+EXTERNAL_APPS = [
     'accounts',
     'products',
     'warehouses',
@@ -47,6 +53,10 @@ INSTALLED_APPS = [
     'notifications',
     'audit_logs',
 ]
+INSTALLED_APPS+=EXTERNAL_APPS
+
+if DEBUG:
+    INSTALLED_APPS.append('debug_toolbar')
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -61,8 +71,16 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+if DEBUG:
+    MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+
 ROOT_URLCONF = 'core.urls'
 
+INTERNAL_IPS = [
+    "127.0.0.1",
+    "localhost",
+    "::1",
+]
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -130,23 +148,11 @@ CORS_ALLOW_HEADERS = (
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# Configure CORS setting to restrict specific origins using below code, & make CORS_ALLOW_ALL_ORIGINS = False
-# CORS_ALLOWED_ORIGINS = [
-#     "https://example.com",
-#     "https://sub.example.com",
-#     "http://localhost:3000",  # For local development
-# ]
-#
-# OR,
-#
-# CORS_ALLOWED_ORIGIN_REGEXES = [
-#     r"^https://\w+\.example\.com$",
-# ]
 
-# AWS S3 Configuration
+# AWS S3 Configuration - Only use S3 for static files in production (not DEBUG)
 USE_S3 = config('USE_S3', default=False, cast=bool)
 
-if USE_S3:
+if USE_S3 and not DEBUG:
     AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
     AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
@@ -154,9 +160,7 @@ if USE_S3:
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
     AWS_S3_SIGNATURE_VERSION = 's3v4'
-    # AWS_QUERYSTRING_AUTH = False  # Add this to prevent signed URLs for static files
-    # AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-    
+
     # Storage Configuration
     STORAGES = {
         "default": {
@@ -266,11 +270,11 @@ JAZZMIN_SETTINGS = {
     
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
-    "related_modal_active": False,
+    "related_modal_active": True,
     "custom_css": None,
     "custom_js": None,
-    "show_ui_builder": True,
-    "changeform_format": "horizontal_tabs",
+    "show_ui_builder": False,
+    "changeform_format": "collapsible",
 }
 
 JAZZMIN_UI_CONFIG = {
