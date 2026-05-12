@@ -27,8 +27,15 @@ A production-ready Django boilerplate with pre-configured settings for AWS S3, P
 - [Quick Start](#quick-start)
   - [Local Development Setup](#local-development-setup)
   - [Docker Setup](#docker-setup)
+- [Admin Panel](#admin-panel)
 - [API Endpoints](#api-endpoints)
-  - [Authentication](#authentication)
+  - [Authentication & Accounts](#authentication--accounts)
+  - [Products](#products)
+  - [Warehouses](#warehouses)
+  - [Inventory](#inventory)
+  - [Orders](#orders)
+  - [Notifications](#notifications)
+  - [Audit Logs](#audit-logs)
 - [Configuration](#configuration)
   - [Environment Variables](#environment-variables)
   - [AWS S3 Configuration](#aws-s3-configuration)
@@ -174,13 +181,129 @@ python manage.py runserver
 docker-compose up --build
 ```
 
+## Admin Panel
+
+The Django Admin panel is accessible at:
+
+```
+http://localhost:8000/admin/
+```
+
+It uses [Jazzmin](https://django-jazzmin.readthedocs.io/) for an enhanced UI. Log in with your superuser credentials.
+
+**Models available in Admin:**
+
+| Section | URL |
+|---|---|
+| Users | `/admin/accounts/user/` |
+| Products | `/admin/products/product/` |
+| Warehouses | `/admin/warehouses/warehouse/` |
+| Inventory | `/admin/inventory/inventory/` |
+| Orders (with inline items) | `/admin/orders/order/` |
+| Notifications | `/admin/notifications/notification/` |
+| Audit Logs | `/admin/audit_logs/auditlog/` |
+
+---
+
 ## API Endpoints
 
-### Authentication
-- POST `/api/accounts/v1/register/` - User registration
-- POST `/api/accounts/v1/login/` - User login
-- POST `/api/accounts/v1/logout/` - User logout
-- GET `/api/accounts/v1/profile/` - User profile
+Base URL pattern: `/api/<app>/v1/`
+
+**Authentication:** Token-based. Include `Authorization: Token <your-token>` header on protected routes.
+
+**Rate Limits:**
+- Anonymous users: 100 requests/day
+- Authenticated users: 1000 requests/day
+
+---
+
+### Authentication & Accounts
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| POST | `/api/accounts/v1/register/` | Register a new user | No |
+| POST | `/api/accounts/v1/login/` | Login and receive auth token | No |
+| POST | `/api/accounts/v1/logout/` | Logout (invalidates token) | Yes |
+| GET | `/api/accounts/v1/profile/` | Get current user profile | Yes |
+| PATCH | `/api/accounts/v1/profile/` | Update current user profile | Yes |
+
+---
+
+### Products
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| GET | `/api/products/v1/` | List all products (paginated, filterable, searchable) | No |
+| POST | `/api/products/v1/` | Create a product | Admin only |
+| GET | `/api/products/v1/{id}/` | Retrieve a product | No |
+| PUT | `/api/products/v1/{id}/` | Update a product | Admin only |
+| PATCH | `/api/products/v1/{id}/` | Partial update a product | Admin only |
+| DELETE | `/api/products/v1/{id}/` | Delete a product | Admin only |
+
+> Product list results are Redis-cached for performance.
+
+---
+
+### Warehouses
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| GET | `/api/warehouses/v1/` | List all warehouses | Admin only |
+| POST | `/api/warehouses/v1/` | Create a warehouse | Admin only |
+| GET | `/api/warehouses/v1/{id}/` | Retrieve a warehouse | Admin only |
+| PUT | `/api/warehouses/v1/{id}/` | Update a warehouse | Admin only |
+| PATCH | `/api/warehouses/v1/{id}/` | Partial update a warehouse | Admin only |
+| DELETE | `/api/warehouses/v1/{id}/` | Delete a warehouse | Admin only |
+
+---
+
+### Inventory
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| GET | `/api/inventory/v1/` | List inventory (filterable by `warehouse` and `product`) | Admin only |
+| POST | `/api/inventory/v1/` | Create an inventory record | Admin only |
+| GET | `/api/inventory/v1/{id}/` | Retrieve an inventory record | Admin only |
+| PUT | `/api/inventory/v1/{id}/` | Update an inventory record | Admin only |
+| PATCH | `/api/inventory/v1/{id}/` | Partial update an inventory record | Admin only |
+| DELETE | `/api/inventory/v1/{id}/` | Delete an inventory record | Admin only |
+
+---
+
+### Orders
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| GET | `/api/orders/v1/` | List orders (users see own; admins see all) | Yes |
+| POST | `/api/orders/v1/` | Place a new order | Yes |
+| GET | `/api/orders/v1/{id}/` | Retrieve an order | Yes |
+| PATCH | `/api/orders/v1/{id}/status/` | Update order status | Admin only |
+
+**Order status transitions:**
+
+```
+PENDING → CONFIRMED
+PENDING → CANCELLED
+CONFIRMED → COMPLETED
+```
+
+`CANCELLED` and `COMPLETED` are terminal states — no further transitions allowed.
+
+---
+
+### Notifications
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| GET | `/api/notifications/v1/` | List notifications for the authenticated user | Yes |
+
+---
+
+### Audit Logs
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| GET | `/api/audit-logs/v1/` | List audit logs (users see logs for their orders; admins see all) | Yes |
 
 ## Configuration
 
